@@ -1,0 +1,21 @@
+extends layout
+
+block content
+  h1 Chat Room #{chat_id}
+  ul#messages
+  form(action='')
+    input#m(autocomplete='off')
+    button Send
+  script(src='/socket.io/socket.io.js')
+  script(src='http://code.jquery.com/jquery-1.11.1.js')
+  script.
+    var socket = io();
+    socket.emit('join', #{chat_id}, function() {});
+    $('form').submit(function(){
+      socket.emit('chat', $('#m').val());
+      $('#m').val('');
+      return false;
+    });
+    socket.on('chat', function(msg){
+      $('#messages').append($('<li>').text(msg));
+    });

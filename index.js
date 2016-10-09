@@ -5,11 +5,10 @@ const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const redis = require('redis');
 
 /* Adding routes */
 
-const routes = require('./routes/index');
+
 
 /* Setting views */
 
@@ -22,7 +21,35 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+
+var debug = require('debug')('redis-chat:server');
+var http = require('http');
+
+/* Get port from environment and store in Express */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/* Create HTTP server */
+
+var server = http.createServer(app);
+
+/* Listen on provided port, on all network interfaces */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+
+let sockets = require('./sockets');
+let io = sockets.socketServer(app, server);
+
+const routes = require('./routes/index');
+const chat_routes = require('./routes/chat')(io);
+
 app.use('/', routes);
+app.use('/chat', chat_routes);
 
 /* Catch 404 and forward to error handler */
 
@@ -58,24 +85,6 @@ app.use(function(err, req, res, next) {
   });
 });
 
-var debug = require('debug')('redis-chat:server');
-var http = require('http');
-
-/* Get port from environment and store in Express */
-
-var port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
-
-/* Create HTTP server */
-
-var server = http.createServer(app);
-var io = require('socket.io')(server);
-
-/* Listen on provided port, on all network interfaces */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
 
 /* Normalize a port into a number, string, or false */
 
@@ -128,30 +137,3 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
-
-var pub = redis.createClient();
-var sub = redis.createClient();
-var clients = [];
-
-sub.subscribe('global');
-sub.on('message', function(channel, msg) {
-  // Broadcast the message to all connected clients on this server.
-  for (var i=0; i < clients.length; i++) {
-    clients[i].emit('chat', msg);
-  }
-});
-
-io.on('connection', function(socket){
-    clients.push(socket);
-    socket.on('chat', function(msg){
-      console.log("msg: " + msg);
-      pub.publish('global', msg);
-    });
-
-    console.log("Se ha conectado un nuevo usuario")
-});
-
-
-io.on('disconnect', function() {
-    clients.splice(clients.indexOf(conn), 1);
-  });

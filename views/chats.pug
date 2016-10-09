@@ -1,0 +1,8 @@
+extends layout
+
+block content
+  h1 Chats
+  ul#rooms
+    each room in rooms
+      li(class='room')
+        a(href='chat/chat_room/' + room) #{room}
