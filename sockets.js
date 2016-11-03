@@ -1,5 +1,5 @@
 const socketio = require('socket.io');
-exports.socketServer = function (app, server) {
+exports.socketServer = (app, server) => {
   const io = socketio(server);
   io.on('connection', function(socket){
 
@@ -16,7 +16,6 @@ exports.socketServer = function (app, server) {
     socket.on('chat', function(msg) {
       let channel = socket.channel;
       io.to(channel).emit('chat', msg);
-      console.log(io.sockets.adapter.rooms);
     });
 
     console.log("Se ha conectado un nuevo usuario")
