@@ -1,5 +1,7 @@
 const express = require('express');
 const request = require('request');
+const moment = require ('moment');
+const masterServer = 'http://localhost:3030/auth';
 
 module.exports = ( io, mongoose, client ) => {
   const router = express.Router();
@@ -26,7 +28,7 @@ module.exports = ( io, mongoose, client ) => {
     client.sismember(['tokens', `${token}`], (err, response) => {
       if (err) throw err;
       if (response === 0){
-        request( { url: 'placeholder', headers: { 'User-token': `${token}` } }, (err, response, body) => {
+        request( { url: masterServer, headers: { 'token': `${token}` } }, (err, response, body) => {
           if (err) throw err;
           if (response){
             let { user_id, username } = JSON.parse(body);
@@ -43,7 +45,7 @@ module.exports = ( io, mongoose, client ) => {
       } else {
         client.zscan(['tokens_ttl', 0, 'MATCH', `*${token}`], (err, response) => {
           if (err) throw err;
-          let [user_id, username, _] = response.split(',');
+          [user_id, username, _] = response[1][0].split(',');
           const ttlDate = _flooredDate(Date.now()).add(2, 'hours').unix();
           client.zadd(["tokens_ttl", ttlDate, `${user_id},${username},${token}`], (err, response) => {
             if (err) throw err;
@@ -52,6 +54,7 @@ module.exports = ( io, mongoose, client ) => {
         });
       }
     });
+    console.log(user_id, username);
     mongoose.model('Chat').findOne({ id: req.params.id }, (err, chat) => {
       if (err) throw err;
       if (!chat) {
@@ -59,6 +62,7 @@ module.exports = ( io, mongoose, client ) => {
         error_.status = 400;
         res.render('error', { message: error_.message, error: error_ });
       } else {
+        console.log(user_id);
         if (chat.users.find( (x) => x.id === user_id )) {
           //TODO: Pass username to user
           res.render('chat_room', {title: 'Chat Room', chat_id: req.params.id });
