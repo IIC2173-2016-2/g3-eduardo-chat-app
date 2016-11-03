@@ -62,20 +62,20 @@ setInterval(() => {
   const unixNow = moment().unix();
   client.zrangebyscore(['users_ttl', 0, unixNow], (err, response) => {
     response.map((x) => {
-      let [ chat_id, user_id ] = x.split(',');
-      mongoose.model('Chat').findOneAndUpdate( { id: chat_id}, { $pull: { "users": { id: user_id } } }, (err, model) => {
-        if (err) throw err;
-        console.log(`Removed ${user_id} from ${chat_id}.`);
-      });
-    });
+      let { chat_id, user_id } = x.split(',');
+      mongoose.model('Chat').findOneAndUpdate( { id: chat_id}, { $pull: { "users": { id: user_id } }, { safe: true, upsert: true}, (err, model) => {
+      mongoose.model('Chat').update( {id: chat_id}, { $pull: {id: [ req.params.deleteUid] } } );
+    })
+    response.map((x) => mongoose.model('Chat').remove({id: x}, (err, response) => {
+      if (err) throw err;
+    }));
   });
-  client.zremrangebyscore(['users_ttl', 0, unixNow], (err, response) => {
+  client.zremrangebyscore(['chats_ttl', 0, unixNow], (err, response) => {
     if (err) throw err;
   });
   client.zrangebyscore(['chats_ttl', 0, unixNow], (err, response) => {
     response.map((x) => mongoose.model('Chat').remove({id: x}, (err, response) => {
       if (err) throw err;
-      console.log(`Deleted chat ${x}.`);
     }));
   });
   client.zremrangebyscore(['chats_ttl', 0, unixNow], (err, response) => {
