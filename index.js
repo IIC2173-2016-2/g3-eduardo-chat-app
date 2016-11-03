@@ -49,7 +49,7 @@ let sockets = require('./sockets');
 let io = sockets.socketServer(app, server);
 
 const routes = require('./routes/index');
-const chat_routes = require('./routes/chat')(io);
+const chat_routes = require('./routes/chat')(io, mongoose, client);
 const api_routes = require('./routes/api')(client, mongoose);
 
 app.use('/', routes);
@@ -60,9 +60,12 @@ errorHandler(app);
 
 setInterval(() => {
   const unixNow = moment().unix();
+
+  /* Chat management */
+
   client.zrangebyscore(['users_ttl', 0, unixNow], (err, response) => {
     response.map((x) => {
-      let [ chat_id, user_id ] = x.split(',');
+      const [ chat_id, user_id ] = x.split(',');
       mongoose.model('Chat').findOneAndUpdate( { id: chat_id}, { $pull: { "users": { id: user_id } } }, (err, model) => {
         if (err) throw err;
         console.log(`Removed ${user_id} from ${chat_id}.`);
@@ -81,4 +84,22 @@ setInterval(() => {
   client.zremrangebyscore(['chats_ttl', 0, unixNow], (err, response) => {
     if (err) throw err;
   });
-}, 10000);
+
+  /* Token management */
+
+  client.zrangebyscore(['tokens_ttl', 0, unixNow], (err, response) => {
+    if (err) throw err;
+    if (response){
+      console.log(response);
+      response.map((x) => {
+        const [user_id, _, ] = x.split(',');
+        client.srem(['tokens', `${user_id}`], (err, response) => {
+          if (err) throw err;
+        });
+      });
+    }
+  });
+  client.zremrangebyscore(['tokens_ttl', 0, unixNow], (err, response) => {
+    if (err) throw err;
+  });
+}, 1800000);
