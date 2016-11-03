@@ -1,7 +1,7 @@
 const express = require('express');
 const request = require('request');
 const moment = require ('moment');
-const masterServer = 'http://localhost:3030/auth';
+const masterServer = process.env.MASTER_SERVER + '/auth';
 
 module.exports = ( io, mongoose, client ) => {
   const router = express.Router();
