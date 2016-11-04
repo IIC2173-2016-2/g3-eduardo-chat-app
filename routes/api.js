@@ -58,7 +58,7 @@ module.exports = (client, mongoose) => {
           if (!chat) {
             res.status(404).send({ message: 'Chat not found' });
           } else {
-            if (chat.users.find( (x) => x.id === user_id )) {
+            if (chat.users.find( (x) => x.user_id === user_id )) {
               res.status(403).send({ message: 'User already in chat' });
             } else {
               const ttlDate = _flooredDate(Date.now()).add(24, 'hours').unix();
@@ -66,7 +66,7 @@ module.exports = (client, mongoose) => {
                 if (err) throw err;
                 client.zadd(["users_ttl", ttlDate, `${chat_id},${user_id}`], (err, response) => {
                   if (err) throw err;
-                  mongoose.model('Chat').findByIdAndUpdate(chat._id, { $push: { "users": { id: user_id, username: username } } }, { safe: true, upsert: true}, (err, model) => {
+                  mongoose.model('Chat').findByIdAndUpdate(chat._id, { $push: { "users": { "user_id": user_id, "username": username } } }, { safe: true, upsert: true}, (err, model) => {
                     if (err) throw err;
                     console.log(`${user_id} joined ${chat_id}`);
                     res.send(`${user_id} joined ${chat_id}`);
