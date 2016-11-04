@@ -22,19 +22,9 @@ module.exports = ( io, mongoose, client ) => {
     res.render('chats', { title: 'Chat rooms', rooms: findRooms() });
   });
 
-  router.get('/chat_room/:id/:user_id', (req, res, next) => {
+  router.get('/chat_room/:id/', (req, res, next) => {
     const id = req.params.id;
-    const user_id = req.params.user_id;
-    mongoose.model('Chat').findOne({ "users.user_id": user_id }, (err, chat) => {
-      if (err) throw err;
-      if (!chat) {
-        let error_ = new Error('No permission to join chat.');
-        error_.status = 403;
-        res.render('error', { message: error_.message, error: error_ });
-      } else {
-          res.render('chat_room', {title: 'Chat Room', chat_id: id });
-      };
-    });
+    res.render('chat_room', {title: 'Chat Room', chat_id: id });
   });
 
 /*  router.get('/chat_room/:id/:token', (req, res, next) => {
