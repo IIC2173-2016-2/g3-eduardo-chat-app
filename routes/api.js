@@ -48,7 +48,7 @@ module.exports = (client, mongoose) => {
     });
 
   router.route('/v1/join_chat').post(
-    (req, res, next) => {
+    (req, res, next) => {
       if (req.body.CHAT_API_SECRET_KEY == process.env.CHAT_API_SECRET_KEY){
         const chat_id = req.body.chat_id;
         const user_id = req.body.user_id;

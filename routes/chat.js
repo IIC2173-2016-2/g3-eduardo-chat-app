@@ -22,7 +22,30 @@ module.exports = ( io, mongoose, client ) => {
     res.render('chats', { title: 'Chat rooms', rooms: findRooms() });
   });
 
-  router.get('/chat_room/:id/:token', (req, res, next) => {
+  router.get('/chat_room/:id/:user_id', (req, res, next) => {
+    const id = req.params.id;
+    const user_id = req.params.user_id;
+    mongoose.model('Chat').findOne({ id: id }, (err, chat) => {
+      if (err) throw err;
+      if (!chat) {
+        let error_ = new Error('Chat not found.');
+        error_.status = 404;
+        res.render('error', { message: error_.message, error: error_ });
+      } else {
+        if (chat.users.find( (c) =>  c.id === user_id  )) {
+          console.log("found_user");
+          //TODO: Pass username to user
+          res.render('chat_room', {title: 'Chat Room', chat_id: id });
+        } else {
+          let error_ = new Error('No permission to join chat.');
+          error_.status = 403;
+          res.render('error', { message: error_.message, error: error_ });
+        };
+      }
+    });
+  });
+
+/*  router.get('/chat_room/:id/:token', (req, res, next) => {
     const token = req.params.token;
     let user_id, username;
     client.sismember(['tokens', `${token}`], (err, response) => {
@@ -54,26 +77,31 @@ module.exports = ( io, mongoose, client ) => {
         });
       }
     });
-    console.log(user_id, username);
     mongoose.model('Chat').findOne({ id: req.params.id }, (err, chat) => {
       if (err) throw err;
       if (!chat) {
         let error_ = new Error('Chat not found.');
-        error_.status = 400;
+        error_.status = 404;
         res.render('error', { message: error_.message, error: error_ });
       } else {
+        console.log("_________________________________________________________");
+        console.log(chat.users);
+        console.log("_________________________________________________________");
+        console.log(chat.users.find((c) =>  c.id === user_id));
         console.log(user_id);
-        if (chat.users.find( (x) => x.id === user_id )) {
+        console.log("_________________________________________________________");
+        if (chat.users.find( (c) =>  c.id === user_id  )) {
+          console.log("found_user");
           //TODO: Pass username to user
           res.render('chat_room', {title: 'Chat Room', chat_id: req.params.id });
         } else {
           let error_ = new Error('No permission to join chat.');
           error_.status = 403;
           res.render('error', { message: error_.message, error: error_ });
-        }
+        };
       }
     });
-  });
+  });*/
 
   return router;
 };
