@@ -7,7 +7,7 @@ block content
     input#m(autocomplete='off')
     button Send
   script(src='/socket.io/socket.io.js')
-  script(src='http://code.jquery.com/jquery-1.11.1.js')
+  script(src='https://code.jquery.com/jquery-1.11.1.js')
   script.
     var socket = io();
     socket.emit('join', '#{chat_id}', function() {});
