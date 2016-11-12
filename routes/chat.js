@@ -1,6 +1,7 @@
 const express = require('express');
 const request = require('request');
-const moment = require ('moment');
+const moment = require('moment');
+const jwt = require('jsonwebtoken');
 const masterServer = process.env.MASTER_SERVER + '/auth';
 
 module.exports = ( io, mongoose, client ) => {
@@ -22,9 +23,32 @@ module.exports = ( io, mongoose, client ) => {
     res.render('chats', { title: 'Chat rooms', rooms: findRooms() });
   });
 
-  router.get('/chat_room/:id/:user_id', (req, res, next) => {
+  router.get('/chat_room/:id', (req, res, next) => {
+    jwt.verify(req.cookies['access-token'], process.env.JWT_SECRET, (err, decoded) => {
+      if(decoded)
+      {
+        req.user = decoded._doc;
+        return next();
+      }
+      else
+      {
+        res.redirect(302, login);
+      }
+      if(err)
+      {
+        console.log(err);
+      }
+    });
+    const user_id = req.user.id;
     const id = req.params.id;
-    const user_id = req.params.user_id;
+    if (process.env.LOAD === "heavy") {
+      mongoose.model('ChatBackup').findOne({ "users.user_id": user_id }, (err, chat) => {
+        if (err) throw err;
+        if (chat) {
+          res.render('chat_room', {title: 'Chat Room', chat_id: id });
+        };
+      });
+    }
     mongoose.model('Chat').findOne({ "users.user_id": user_id }, (err, chat) => {
       if (err) throw err;
       if (!chat) {
@@ -101,3 +125,4 @@ module.exports = ( io, mongoose, client ) => {
 const _flooredDate = (timestamp) => {
   return moment(timestamp).utc();
 };
+

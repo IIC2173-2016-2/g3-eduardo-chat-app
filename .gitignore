@@ -96,3 +96,5 @@ jspm_packages
 # Ignore redis binary dump (dump.rdb) files
 
 *.rdb
+
+.tern-port
