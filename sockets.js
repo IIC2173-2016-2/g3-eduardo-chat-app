@@ -13,9 +13,9 @@ exports.socketServer = (app, server) => {
       ack();
     });
 
-    socket.on('chat', function(msg) {
+    socket.on('chat', function(msg, username) {
       let channel = socket.channel;
-      io.to(channel).emit('chat', msg);
+      io.to(channel).emit('chat', msg, username);
     });
 
     console.log("Se ha conectado un nuevo usuario")

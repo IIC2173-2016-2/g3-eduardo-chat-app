@@ -20,7 +20,7 @@ module.exports = (client, mongoose) => {
   const create_chat = (chat_id, chat_name, backup = false) => {
     const ttlDate = _flooredDate(Date.now()).add(24, 'hours').unix();
     const redis_db = backup ? "backup_chats_ttl" : "chats_ttl";
-    const chat_model = backup ? "ChatBackup" : "Chat";
+    const chat_model = backup ? "Backup" : "Chat";
     client.zadd([redis_db, ttlDate, chat_id], (err, response) => {
       if (err) throw err;
       mongoose.model(chat_model).count({id: chat_id}, (err, count) => {
@@ -43,7 +43,7 @@ module.exports = (client, mongoose) => {
     (req, res, next) => {
       const chat_id = req.get('chat_id');
       if (process.env.LOAD === "heavy"){
-        mongoose.model('ChatBackup').findOne({ id: chat_id }, (err, chat) => {
+        mongoose.model('Backup').findOne({ id: chat_id }, (err, chat) => {
           if (err) throw err;
           if (chat) {
             res.status(200).send({ message: `Found chat ${chat_id}.` });
@@ -102,7 +102,7 @@ module.exports = (client, mongoose) => {
       };
     });
 
-  router.route('/v1/join_chat').post(
+  router.route('/v1/join_chat').get(
     (req, res, next) => {
       if (req.get('CHAT_API_SECRET_KEY') == process.env.CHAT_API_SECRET_KEY){
         const chat_id = req.get('chat_id');

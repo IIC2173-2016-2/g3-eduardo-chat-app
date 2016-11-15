@@ -12,7 +12,6 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const db = require('./model/db');
 const chat = require('./model/chats');
-const chat_backup = require('./model/chats_backup');
 
 const client = redis.createClient();
 
