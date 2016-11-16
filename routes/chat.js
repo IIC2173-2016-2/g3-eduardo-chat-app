@@ -54,7 +54,7 @@ module.exports = ( io, mongoose, client ) => {
             console.log(chat.users);
             console.log(user_id);
             if (chat.users.find( (c) =>  c.user_id === user_id  )) {
-              res.render('chat_room', {title: 'Chat Room', chat_id: id, username: req.user.username });
+              res.render('chat_room', {title: 'Chat Room', chat_id: id, username: req.user.username, chatname: chat.name , master_server: process.env.MASTER_SERVER});
             } else {
               let error_ = new Error('No permission to join chat.');
               error_.status = 403;

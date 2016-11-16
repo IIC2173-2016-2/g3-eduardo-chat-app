@@ -1,7 +1,9 @@
 extends layout
 
 block content
-  h1 Chat Room #{chat_id}
+  #header
+    a(href="https://assw9.ing.puc.cl/") Home
+    h1 #{chatname}
   ul#messages
   form(action='')
     input#m(autocomplete='off')
@@ -19,4 +21,5 @@ block content
     });
     socket.on('chat', function(msg, username){
       $('#messages').append($('<li>').text(username + ": " + msg));
+      $("html, body").animate({ scrollTop: $(document).height() }, 1000);
     });
