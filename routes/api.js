@@ -40,8 +40,21 @@ module.exports = (client, mongoose) => {
     return true;
   };
 
+  const ask_sibling = () => {
+    const askSibling = setInterval(() => {
+      const status = 0;
+      if (status === 200){
+        clearInterval(askSibling);
+      }
+    }, 120000);
+  };
+
   router.route('/v1/is_chat_created').get(
     (req, res, next) => {
+      const load = req.get('SLAVE-TARGET');
+      if (load === "sibling"){
+
+      };
       const chat_id = req.get('CHAT-ID');
       if (chat_id === undefined){
         res.status(400).send({ message: "Bad request." });
@@ -86,8 +99,6 @@ module.exports = (client, mongoose) => {
         next(err);
       }
     });
-
-
 
   router.route('/v1/delete_chat').get(
     (req, res, next) => {
@@ -149,6 +160,15 @@ module.exports = (client, mongoose) => {
         next(err);
       }
     });
+
+  router.route('/v1/start_heavy_mode'){
+    (req, res, next) => {
+      if (req.get('CHAT-API-SECRET-KEY') == process.env.CHAT_API_SECRET_KEY){
+        process.env.LOAD = "heavy";
+
+      }
+    };
+  };
 
   router.route('/v1/backup/create_chat').get(
     (req, res, next) => {
