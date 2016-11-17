@@ -26,6 +26,7 @@ module.exports = (client, mongoose) => {
       mongoose.model(chat_model).count({id: chat_id}, (err, count) => {
         if (err) throw err;
         if (count === 0){
+          console.log(chat_id);
           mongoose.model(chat_model).create({ id: chat_id, name: chat_name, users: [] }, (err, response) => {
             if (err) {
               console.log(err);
@@ -77,19 +78,6 @@ module.exports = (client, mongoose) => {
           if (create_chat(chat_id, chat_name)){
             res.send(`Created ${chat_id}.`);
           };
-          const options = {
-            url: `${process.env.MASTER_SERVER}/api/v1/backup/create_chat`,
-            headers: {
-              'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
-              'CHAT-ID': req.get('CHAT-ID'),
-              'CHAT-NAME': req.get('CHAT-NAME')
-            }
-          };
-          request(options, (err, response, body) => {
-            if (!err && response.statusCode == 200){
-              console.log("Created chat in sibling server");
-            }
-          });
         }
       } else {
         res.status(401);
@@ -111,18 +99,6 @@ module.exports = (client, mongoose) => {
           mongoose.model('Chat').remove({id: chat_id}, (err, response) => {
             if (err) throw err;
             console.log(`Deleted chat ${chat_id}.`);
-            const options = {
-              url: `${process.env.MASTER_SERVER}/api/v1/backup/delete_chat`,
-              headers: {
-                'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
-                'CHAT-ID': chat_id
-              }
-            };
-            request(options, (err, response, body) => {
-              if (!err && response.statusCode == 200){
-                console.log("Deleted chat in sibling server");
-              }
-            });
           });
         }
       } else {
@@ -159,20 +135,6 @@ module.exports = (client, mongoose) => {
                       if (err) throw err;
                       console.log(`${user_id} joined ${chat_id}`);
                       res.send(`${user_id} joined ${chat_id}`);
-                      const options = {
-                        url: `${process.env.MASTER_SERVER}/api/v1/backup/join_chat`,
-                        headers: {
-                          'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
-                          'CHAT-ID': chat_id,
-                          'USER-ID': user_id,
-                          'USERNAME': username
-                        }
-                      };
-                      request(options, (err, response, body) => {
-                        if (!err && response.statusCode == 200){
-                          console.log(`User ${user_id} joined ${chat_id} in sibling server.`);
-                        }
-                      });
                     });
                   });
                 });
