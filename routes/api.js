@@ -39,6 +39,24 @@ module.exports = (client, mongoose) => {
     return true;
   };
 
+  const ask_sibling = () => {
+    const askSibling = setInterval(() => {
+      const options = {
+        url: `${process.env.SIBLING_CHAT}api/v1/alive`,
+        headers: {
+          'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY
+        }
+      };
+      request(options, (err, response, body) => {
+        if (response.statusCode == 200){
+          process.env.LOAD = "normal";
+          
+          clearInterval(askSibling);
+        }
+      });
+    }, 120000);
+  };
+
   router.route('/v1/is_chat_created').get(
     (req, res, next) => {
       const chat_id = req.get('CHAT-ID');
@@ -78,7 +96,7 @@ module.exports = (client, mongoose) => {
             res.send(`Created ${chat_id}.`);
           };
           const options = {
-            url: `${process.env.MASTER_SERVER}/api/v1/backup/create_chat`,
+            url: `${process.env.SIBLING_CHAT}api/v1/backup/create_chat`,
             headers: {
               'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
               'CHAT-ID': req.get('CHAT-ID'),
@@ -160,7 +178,7 @@ module.exports = (client, mongoose) => {
                       console.log(`${user_id} joined ${chat_id}`);
                       res.send(`${user_id} joined ${chat_id}`);
                       const options = {
-                        url: `${process.env.MASTER_SERVER}/api/v1/backup/join_chat`,
+                        url: `${process.env.SIBLING_CHAT}api/v1/backup/join_chat`,
                         headers: {
                           'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
                           'CHAT-ID': chat_id,
@@ -187,6 +205,42 @@ module.exports = (client, mongoose) => {
         next(err);
       }
     });
+
+  router.route('/v1/remove_from_chat').get(
+    (req, res, next) => {
+      if (req.get('CHAT-API-SECRET-KEY') == process.env.CHAT_API_SECRET_KEY){
+        const chat_id = req.get('CHAT-ID');
+        const user_id = req.get('USER-ID');
+        if ((chat_id === undefined) || (user_id === undefined)){
+          res.status(400).send({ message: "Bad request."});
+        } else {
+          mongoose.model('Chat').findOneAndUpdate( { id: chat_id}, { $pull: { "users": { id: user_id } } }, (err, model) => {
+            if (err) throw err;
+            console.log(`Removed ${user_id} from ${chat_id}.`);
+            res.status(200).send({ message: `Removed ${user_id} from ${chat_id}.` });
+            const options = {
+              url: `${process.env.SIBLING_CHAT}api/v1/backup/remove_from_chat`,
+              headers: {
+                'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+                'CHAT-ID': chat_id,
+                'USER-ID': user_id
+              }
+            };
+            request(options, (err, response, body) => {
+              if (!err && response.statusCode == 200){
+                console.log(`User ${user_id} removed from ${chat_id} in sibling server.`);
+              }
+            });
+          });
+        }
+      } else {
+        res.status(401);
+        const err = new Error('No Permission');
+        err.status = 401;
+        next(err);
+      }
+    });
+
 
   router.route('/v1/backup/create_chat').get(
     (req, res, next) => {
@@ -216,7 +270,7 @@ module.exports = (client, mongoose) => {
         if ((chat_id === undefined)){
           res.status(400).send({ message: "Bad request."});
         } else {
-          mongoose.model('Chat').remove({id: chat_id}, (err, response) => {
+          mongoose.model('Backup').remove({id: chat_id}, (err, response) => {
             if (err) throw err;
             console.log(`Deleted chat ${chat_id}.`);
           });
@@ -238,7 +292,7 @@ module.exports = (client, mongoose) => {
         if ((chat_id === undefined) || (user_id === undefined) || (username === undefined)){
           res.status(400).send({ message: "Bad request."});
         } else {
-          mongoose.model('Chat').findOne({ id: chat_id }, (err, chat) => {
+          mongoose.model('Backup').findOne({ id: chat_id }, (err, chat) => {
             if (err) throw err;
             if (!chat) {
               res.status(404).send({ message: 'Chat not found' });
@@ -246,7 +300,7 @@ module.exports = (client, mongoose) => {
               if (chat.users.find( (x) => x.user_id === user_id )) {
                 res.status(403).send({ message: 'User already in chat' });
               } else {
-                mongoose.model('Chat').findByIdAndUpdate(chat._id, { $push: { "users": { "user_id": user_id, "username": username } } }, { safe: true, upsert: true}, (err, model) => {
+                mongoose.model('Backup').findByIdAndUpdate(chat._id, { $push: { "users": { "user_id": user_id, "username": username } } }, { safe: true, upsert: true}, (err, model) => {
                   if (err) throw err;
                   console.log(`${user_id} joined ${chat_id}`);
                   res.send(`${user_id} joined ${chat_id}`);
@@ -268,10 +322,10 @@ module.exports = (client, mongoose) => {
       if (req.get('CHAT-API-SECRET-KEY') == process.env.CHAT_API_SECRET_KEY){
         const chat_id = req.get('CHAT-ID');
         const user_id = req.get('USER-ID');
-        if ((chat_id === undefined) || (user_id === undefined) || (username === undefined)){
+        if ((chat_id === undefined) || (user_id === undefined)){
           res.status(400).send({ message: "Bad request."});
         } else {
-          mongoose.model('Chat').findOneAndUpdate( { id: chat_id}, { $pull: { "users": { id: user_id } } }, (err, model) => {
+          mongoose.model('Backup').findOneAndUpdate( { id: chat_id}, { $pull: { "users": { id: user_id } } }, (err, model) => {
             if (err) throw err;
             console.log(`Removed ${user_id} from ${chat_id}.`);
           });
