@@ -39,7 +39,7 @@ module.exports = (client, mongoose) => {
     return true;
   };
 
-  router.route('v1/is_chat_created').get(
+  router.route('/v1/is_chat_created').get(
     (req, res, next) => {
       const chat_id = req.get('CHAT-ID');
       if (chat_id === undefined){
@@ -132,8 +132,6 @@ module.exports = (client, mongoose) => {
         next(err);
       }
     });
-  
-
 
   router.route('/v1/join_chat').get(
     (req, res, next) => {
@@ -230,43 +228,42 @@ module.exports = (client, mongoose) => {
         next(err);
       }
     });
-  
 
-router.route('/v1/backup/join_chat').get(
-  (req, res, next) => {
-    if (req.get('CHAT-API-SECRET-KEY') == process.env.CHAT_API_SECRET_KEY){
-      const chat_id = req.get('CHAT-ID');
-      const user_id = req.get('USER-ID');
-      const username = req.get('USERNAME');
-      if ((chat_id === undefined) || (user_id === undefined) || (username === undefined)){
-        res.status(400).send({ message: "Bad request."});
-      } else {
-        mongoose.model('Chat').findOne({ id: chat_id }, (err, chat) => {
-          if (err) throw err;
-          if (!chat) {
-            res.status(404).send({ message: 'Chat not found' });
-          } else {
-            if (chat.users.find( (x) => x.user_id === user_id )) {
-              res.status(403).send({ message: 'User already in chat' });
+  router.route('/v1/backup/join_chat').get(
+    (req, res, next) => {
+      if (req.get('CHAT-API-SECRET-KEY') == process.env.CHAT_API_SECRET_KEY){
+        const chat_id = req.get('CHAT-ID');
+        const user_id = req.get('USER-ID');
+        const username = req.get('USERNAME');
+        if ((chat_id === undefined) || (user_id === undefined) || (username === undefined)){
+          res.status(400).send({ message: "Bad request."});
+        } else {
+          mongoose.model('Chat').findOne({ id: chat_id }, (err, chat) => {
+            if (err) throw err;
+            if (!chat) {
+              res.status(404).send({ message: 'Chat not found' });
             } else {
-              mongoose.model('Chat').findByIdAndUpdate(chat._id, { $push: { "users": { "user_id": user_id, "username": username } } }, { safe: true, upsert: true}, (err, model) => {
-                if (err) throw err;
-                console.log(`${user_id} joined ${chat_id}`);
-                res.send(`${user_id} joined ${chat_id}`);
-              });
+              if (chat.users.find( (x) => x.user_id === user_id )) {
+                res.status(403).send({ message: 'User already in chat' });
+              } else {
+                mongoose.model('Chat').findByIdAndUpdate(chat._id, { $push: { "users": { "user_id": user_id, "username": username } } }, { safe: true, upsert: true}, (err, model) => {
+                  if (err) throw err;
+                  console.log(`${user_id} joined ${chat_id}`);
+                  res.send(`${user_id} joined ${chat_id}`);
+                });
+              }
             }
-          }
-        });
-      };
-    } else {
-      res.status(401);
-      const err = new Error('No Permission');
-      err.status = 401;
-      next(err);
-    }
-  });
+          });
+        };
+      } else {
+        res.status(401);
+        const err = new Error('No Permission');
+        err.status = 401;
+        next(err);
+      }
+    });
 
-  router.route('v1/backup/remove_from_chat').get(
+  router.route('/v1/backup/remove_from_chat').get(
     (req, res, next) => {
       if (req.get('CHAT-API-SECRET-KEY') == process.env.CHAT_API_SECRET_KEY){
         const chat_id = req.get('CHAT-ID');
