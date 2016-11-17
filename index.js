@@ -9,6 +9,7 @@ const portHandler = require('./port_handler');
 const errorHandler = require('./error_handler');
 const redis = require('redis');
 const moment = require('moment');
+const request = require('request');
 const mongoose = require('mongoose');
 const db = require('./model/db');
 const chat = require('./model/chats');
@@ -69,6 +70,19 @@ setInterval(() => {
       mongoose.model('Chat').findOneAndUpdate( { id: chat_id}, { $pull: { "users": { id: user_id } } }, (err, model) => {
         if (err) throw err;
         console.log(`Removed ${user_id} from ${chat_id}.`);
+        const options = {
+          url: `${process.env.MASTER_SERVER}/api/v1/backup/remove_from_chat`,
+          headers: {
+            'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+            'CHAT-ID': chat_id,
+            'USER-ID': user_id
+          }
+        };
+        request(options, (err, response, body) => {
+          if (!err && response.statusCode == 200){
+            console.log(`Removed ${user_id} from ${chat_id}.`);
+          }
+        });
       });
     });
   });
@@ -79,6 +93,18 @@ setInterval(() => {
     response.map((x) => mongoose.model('Chat').remove({id: x}, (err, response) => {
       if (err) throw err;
       console.log(`Deleted chat ${x}.`);
+      const options = {
+        url: `${process.env.MASTER_SERVER}/api/v1/backup/delete_chat`,
+        headers: {
+          'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+          'CHAT-ID': x
+        }
+      };
+      request(options, (err, response, body) => {
+        if (!err && response.statusCode == 200){
+          console.log("Deleted chat in sibling server");
+        }
+      });
     }));
   });
   client.zremrangebyscore(['chats_ttl', 0, unixNow], (err, response) => {
@@ -87,7 +113,7 @@ setInterval(() => {
 
   /* Token management */
 
-  client.zrangebyscore(['tokens_ttl', 0, unixNow], (err, response) => {
+/*  client.zrangebyscore(['tokens_ttl', 0, unixNow], (err, response) => {
     if (err) throw err;
     if (response){
       console.log(response);
@@ -101,5 +127,5 @@ setInterval(() => {
   });
   client.zremrangebyscore(['tokens_ttl', 0, unixNow], (err, response) => {
     if (err) throw err;
-  });
+  });*/
 }, 1800000);
