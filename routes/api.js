@@ -101,7 +101,7 @@ module.exports = (client, mongoose) => {
 
 
 
-  router.route('/v1/delete_chat'){
+  router.route('/v1/delete_chat').get(
     (req, res, next) => {
       if (req.get('CHAT-API-SECRET-KEY') == process.env.CHAT_API_SECRET_KEY){
         const chat_id = req.get('CHAT-ID');
@@ -131,8 +131,8 @@ module.exports = (client, mongoose) => {
         err.status = 401;
         next(err);
       }
-    };
-  }
+    });
+  
 
 
   router.route('/v1/join_chat').get(
@@ -211,7 +211,7 @@ module.exports = (client, mongoose) => {
       };
     });
 
-  router.route('/v1/backup/delete_chat'){
+  router.route('/v1/backup/delete_chat').get(
     (req, res, next) => {
       if (req.get('CHAT-API-SECRET-KEY') == process.env.CHAT_API_SECRET_KEY){
         const chat_id = req.get('CHAT-ID');
@@ -229,8 +229,8 @@ module.exports = (client, mongoose) => {
         err.status = 401;
         next(err);
       }
-    };
-  }
+    });
+  
 
 router.route('/v1/backup/join_chat').get(
   (req, res, next) => {
