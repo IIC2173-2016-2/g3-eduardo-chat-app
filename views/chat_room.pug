@@ -1,15 +1,45 @@
 extends layout
 
 block content
+  // header.header
+  //   a.logo(href='index.html') ArquiCoins
+  //   nav.navbar.navbar-static-top(role='navigation')
+  //     .navbar-right
+  //       ul.nav.navbar-nav
+  //         li.dropdown
+  //           a(href='https://assw9.ing.puc.cl')
+  //             i Dashboard
+  //         li.dropdown
+  //           a(href='/locations')
+  //             i Mapa
+  //         li.dropdown
+  //           a(href='/my_chats')
+  //             i Mis Chats
+  //         li.dropdown.user.user-menu
+  //           a.dropdown-toggle(href='#', data-toggle='dropdown')
+  //             i.fa.fa-user
+  //             |
+  //             span
+  //               | Eduardo App
+  //               i.caret
+  //           ul.dropdown-menu.dropdown-custom.dropdown-menu-right
+  //             li.divider
+  //             li
+  //               a(href='/users/logout')
+  //                 i.fa.fa-ban.fa-fw.pull-right
+  //                 |  Logout
   #header
-    a(href="https://assw9.ing.puc.cl/") Home
+    a(href="https://assw9.ing.puc.cl/") Home |
+    a(href="https://assw9.ing.puc.cl/locations") Mapa |
+    a(href="https://assw9.ing.puc.cl/my_chats") Mis Chats |
+    a(href="https://assw9.ing.puc.cl/users/logout") Logout
     h1 #{chatname}
+
   ul#messages
   form(action='')
     input#m(autocomplete='off')
     button Send
   script(src='/socket.io/socket.io.js')
-  script(src='https://code.jquery.com/jquery-1.11.1.js')
   script.
     var socket = io();
     var username = "#{username}";

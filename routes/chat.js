@@ -30,12 +30,18 @@ module.exports = ( io, mongoose, client ) => {
         req.user = decoded._doc;
         const user_id = req.user._id;
         const id = req.params.id;
-        if (process.env.LOAD === "heavy") {
-          mongoose.model('ChatBackup').findOne({ id: id }, (err, chat) => {
+        if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
+          mongoose.model('Backup').findOne({ id: id }, (err, chat) => {
             if (err) throw err;
-            if (chat) {
-              if (chat.users.find( (c) =>  c.id === user_id  )) {
-                res.render('chat_room', {title: 'Chat Room', chat_id: id, username: res.user.username });
+            if (!chat) {
+              let error_ = new Error('Chat not found.');
+              error_.status = 404;
+              res.render('error', { message: error_.message, error: error_ });
+            } else {
+              console.log(chat.users);
+              console.log(user_id);
+              if (chat.users.find( (c) =>  c.user_id === user_id  )) {
+                res.render('chat_room', {title: 'Chat Room', chat_id: id, username: req.user.username, chatname: chat.name , master_server: process.env.MASTER_SERVER});
               } else {
                 let error_ = new Error('No permission to join chat.');
                 error_.status = 403;
@@ -43,25 +49,26 @@ module.exports = ( io, mongoose, client ) => {
               };
             }
           });
-        };
-        mongoose.model('Chat').findOne({ id: id }, (err, chat) => {
-          if (err) throw err;
-          if (!chat) {
-            let error_ = new Error('Chat not found.');
-            error_.status = 404;
-            res.render('error', { message: error_.message, error: error_ });
-          } else {
-            console.log(chat.users);
-            console.log(user_id);
-            if (chat.users.find( (c) =>  c.user_id === user_id  )) {
-              res.render('chat_room', {title: 'Chat Room', chat_id: id, username: req.user.username, chatname: chat.name , master_server: process.env.MASTER_SERVER});
-            } else {
-              let error_ = new Error('No permission to join chat.');
-              error_.status = 403;
+        } else {
+          mongoose.model('Chat').findOne({ id: id }, (err, chat) => {
+            if (err) throw err;
+            if (!chat) {
+              let error_ = new Error('Chat not found.');
+              error_.status = 404;
               res.render('error', { message: error_.message, error: error_ });
-            };
-          }
-        });
+            } else {
+              console.log(chat.users);
+              console.log(user_id);
+              if (chat.users.find( (c) =>  c.user_id === user_id  )) {
+                res.render('chat_room', {title: 'Chat Room', chat_id: id, username: req.user.username, chatname: chat.name , master_server: process.env.MASTER_SERVER});
+              } else {
+                let error_ = new Error('No permission to join chat.');
+                error_.status = 403;
+                res.render('error', { message: error_.message, error: error_ });
+              };
+            }
+          });
+        }
       }
       else
       {
@@ -69,24 +76,24 @@ module.exports = ( io, mongoose, client ) => {
       }
     });
   });
- /*       mongoose.model('Chat').findOne({ "users.user_id": user_id }, (err, chat) => {
-          if (err) {
-            console.log(err);
-            throw err;
-          };
-          if (!chat) {
-            let error_ = new Error('No permission to join chat.');
-            error_.status = 403;
-            res.render('error', { message: error_.message, error: error_ });
-            return next();
-          } else {
-            res.render('chat_room', {title: 'Chat Room', chat_id: id });
-            return next();
-          };
-        });
-      }
+  /*       mongoose.model('Chat').findOne({ "users.user_id": user_id }, (err, chat) => {
+   if (err) {
+   console.log(err);
+   throw err;
+   };
+   if (!chat) {
+   let error_ = new Error('No permission to join chat.');
+   error_.status = 403;
+   res.render('error', { message: error_.message, error: error_ });
+   return next();
+   } else {
+   res.render('chat_room', {title: 'Chat Room', chat_id: id });
+   return next();
+   };
+   });
+   }
 
-    }); */
+   }); */
 
   /*  router.get('/chat_room/:id/:token', (req, res, next) => {
    const token = req.params.token;

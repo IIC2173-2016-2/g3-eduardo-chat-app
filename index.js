@@ -71,7 +71,7 @@ setInterval(() => {
         if (err) throw err;
         console.log(`Removed ${user_id} from ${chat_id}.`);
         const options = {
-          url: `${process.env.MASTER_SERVER}/api/v1/backup/remove_from_chat`,
+          url: `${process.env.SIBLING_CHAT}/api/v1/backup/remove_from_chat`,
           headers: {
             'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
             'CHAT-ID': chat_id,
@@ -89,12 +89,26 @@ setInterval(() => {
   client.zremrangebyscore(['users_ttl', 0, unixNow], (err, response) => {
     if (err) throw err;
   });
+
+  client.zrangebyscore(['backup_users_ttl', 0, unixNow], (err, response) => {
+    response.map((x) => {
+      const [ chat_id, user_id ] = x.split(',');
+      mongoose.model('Backup').findOneAndUpdate( { id: chat_id}, { $pull: { "users": { id: user_id } } }, (err, model) => {
+        if (err) throw err;
+        console.log(`Removed ${user_id} from ${chat_id} in backup.`);
+      });
+    });
+  });
+  client.zremrangebyscore(['backup_users_ttl', 0, unixNow], (err, response) => {
+    if (err) throw err;
+  });
+
   client.zrangebyscore(['chats_ttl', 0, unixNow], (err, response) => {
     response.map((x) => mongoose.model('Chat').remove({id: x}, (err, response) => {
       if (err) throw err;
       console.log(`Deleted chat ${x}.`);
       const options = {
-        url: `${process.env.MASTER_SERVER}/api/v1/backup/delete_chat`,
+        url: `${process.env.SIBLING_CHAT}/api/v1/backup/delete_chat`,
         headers: {
           'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
           'CHAT-ID': x
@@ -111,21 +125,14 @@ setInterval(() => {
     if (err) throw err;
   });
 
-  /* Token management */
-
-/*  client.zrangebyscore(['tokens_ttl', 0, unixNow], (err, response) => {
-    if (err) throw err;
-    if (response){
-      console.log(response);
-      response.map((x) => {
-        const [user_id, _, ] = x.split(',');
-        client.srem(['tokens', `${user_id}`], (err, response) => {
-          if (err) throw err;
-        });
-      });
-    }
+  client.zrangebyscore(['backup_chats_ttl', 0, unixNow], (err, response) => {
+    response.map((x) => mongoose.model('Backup').remove({id: x}, (err, response) => {
+      if (err) throw err;
+      console.log(`Deleted chat ${x}.`);
+    }));
   });
-  client.zremrangebyscore(['tokens_ttl', 0, unixNow], (err, response) => {
+  client.zremrangebyscore(['backup_chats_ttl', 0, unixNow], (err, response) => {
     if (err) throw err;
-  });*/
+  });
+
 }, 1800000);

@@ -9,8 +9,11 @@ form {
 }
 form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
 form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-#messages { list-style-type: none; margin: 0; padding: 50px 0; }
+#messages { list-style-type: none; margin: 0; padding: 60px 0; }
 #messages li { padding: 5px 10px; }
 #messages li:nth-child(odd) { background: #eee; }
 .room { font-size: 18px; text-align: center;}
-#header {position: fixed; top: 0; height: 50px; width: 100%; background: #fff}
+#header {position: fixed; top: 0; height: 60px; width: 100%; background: #fff}
+#header h1 {
+    margin: 5px 0;
+}
