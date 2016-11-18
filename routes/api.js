@@ -80,7 +80,7 @@ module.exports = (client, mongoose) => {
         res.status(404).send({ message: 'Chat not found' });
       } else {
         if (chat.users.find( (x) => x.user_id === user_id )) {
-          res.status(403).send({ message: 'User already in chat' });
+          res.status(200).send({ message: 'User already in chat' });
         } else {
           if (local) {
             const ttlDate = _flooredDate(Date.now()).add(24, 'hours').unix();
@@ -433,7 +433,7 @@ module.exports = (client, mongoose) => {
                 res.status(200).send({ message: `Added ${chat_id}`});
               });
             } else {
-              res.status(409).send({ message: `Chat already exists`});
+              res.status(200).send({ message: `Chat already exists`});
             }
           });
         });
@@ -455,7 +455,7 @@ module.exports = (client, mongoose) => {
             res.status(404).send({ message: 'Chat not found' });
           } else {
             if (chat.users.find( (x) => x.user_id === user_id )) {
-              res.status(403).send({ message: 'User already in chat' });
+              res.status(200).send({ message: 'User already in chat' });
             } else {
               const ttlDate = _flooredDate(Date.now()).add(24, 'hours').unix();
               client.zadd(['chats_ttl', ttlDate, chat_id], (err, response) => {
