@@ -179,23 +179,80 @@ module.exports = (client, mongoose) => {
         }
       };
       request(options, (err, response, body) => {
-        if (response.statusCode == 200){
-          client.zrangebyscore(['backup_users_ttl', 0, unixNow], (err, response) => {
-            console.log(response);
-            response.map((x) => {
-              const [ chat_id, user_id ] = x.split(',');
+        if (response){
+          if (response.statusCode == 200){
+            client.zrange(['backup_chats_ttl', 0, -1], (err, response) => {
+              response.map((x) => {
+                mongoose.model('Backup').findOne({ id: x }, (err, chat) => {
+                  if (err) throw err;
+                  if (chat){
+                    console.log(chat.id);
+                    console.log(chat.name);
+                    let options_ = {
+                      url: `${process.env.SIBLING_CHAT}/api/v1/restore/chat`,
+                      headers: {
+                        'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+                        'CHAT-ID': chat.id,
+                        'CHAT-NAME': chat.name
+                      }
+                    };
+                    request(options_, (err, response, body) => {
+                      if (err) throw err;
+                      if (response.statusCode == 200){
+                        console.log(`Restored ${chat.id}.`);
+                      }
+                    });
+                  }
+                });
+              });
             });
-          });
-          clearInterval(askSibling);
-        }
+            client.zremrangebyscore(['backup_chats_ttl', 0, 'inf'], (err, response) => {
+              if (err) throw err;
+            });
+            client.zrange(['backup_users_ttl', 0, -1], (err, response) => {
+              response.map((x) => {
+                const [ chat_id, user_id ] = x.split(',');
+                mongoose.model('Backup').findOne({ id: chat_id }, (err, chat) => {
+                  if (err) throw err;
+                  if (chat){
+                    let user = chat.users.filter((u) => (u.user_id === user_id));
+                    let options_ = {
+                      url: `${process.env.SIBLING_CHAT}/api/v1/restore/user`,
+                      headers: {
+                        'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+                        'CHAT-ID': chat_id,
+                        'USER-ID': user_id,
+                        'USERNAME': user[0].username
+                      }
+                    };
+                    request(options_, (err, response, body) => {
+                      if (err) throw err;
+                      if (response.statusCode == 200){
+                        console.log(`Restored user ${user_id} in chat ${chat_id}.`);
+                      }
+                    });
+                  };
+                });
+              });
+            });
+            client.zremrangebyscore(['backup_users_ttl', 0, 'inf'], (err, response) => {
+              if (err) throw err;
+            });
+            process.env.LOAD = "normal";
+            clearInterval(askSibling);
+          };
+        };
       });
-    }, 120000);
+    }, 15000);
   };
 
   router.route('/v1/*').get(
     (req, res, next) => {
-      console.log("Decorator");
       if (req.get('CHAT-API-SECRET-KEY') === process.env.CHAT_API_SECRET_KEY){
+        if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
+          process.env.LOAD = "heavy";
+          ask_sibling();
+        };
         next();
       } else {
         res.status(401);
@@ -220,7 +277,9 @@ module.exports = (client, mongoose) => {
         if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
           mongoose.model('Backup').findOne({ id: chat_id }, (err, chat) => {
             if (err) throw err;
-            if (chat) {
+            if (!chat) {
+              res.status(404).send({ message: `Chat not found.` });
+            } else {
               res.status(200).send({ message: `Found chat ${chat_id}.`, users: chat.users.length });
             }
           });
@@ -229,8 +288,7 @@ module.exports = (client, mongoose) => {
             if (err) throw err;
             if (!chat) {
               res.status(404).send({ message: `Chat not found.` });
-            }
-            if (chat) {
+            } else {
               res.status(200).send({ message: `Found chat ${chat_id}.`, users: chat.users.length });
             }
           });
@@ -295,9 +353,9 @@ module.exports = (client, mongoose) => {
         res.status(400).send({ message: "Bad request."});
       } else {
         if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
-          remove_from_chat(chat_id, user_id, true);
+          remove_from_chat(chat_id, user_id, res, true);
         } else {
-          remove_from_chat(chat_id, user_id);
+          remove_from_chat(chat_id, user_id, res);
         }
       }
     });
@@ -355,6 +413,67 @@ module.exports = (client, mongoose) => {
       }
     });
 
+  router.route('/v1/restore/chat').get(
+    (req, res, next) => {
+      const chat_id = req.get('CHAT-ID');
+      const chat_name = req.get('CHAT-NAME');
+      if ((chat_id === undefined) || (chat_name === undefined)){
+        res.status(400).send({ message: "Bad request."});
+        console.log('Bad Request');
+      } else {
+        const ttlDate = _flooredDate(Date.now()).add(24, 'hours').unix();
+        client.zadd(['chats_ttl', ttlDate, chat_id], (err, response) => {
+          if (err) throw err;
+          mongoose.model('Chat').count({id: chat_id}, (err, count) => {
+            if (err) throw err;
+            if (count === 0){
+              mongoose.model('Chat').create({ id: chat_id, name: chat_name, users: [] }, (err, response) => {
+                if (err) throw err;
+                console.log(`Added ${chat_id}`);
+                res.status(200).send({ message: `Added ${chat_id}`});
+              });
+            } else {
+              res.status(409).send({ message: `Chat already exists`});
+            }
+          });
+        });
+      }
+    });
+
+  router.route('/v1/restore/user').get(
+    (req, res, next) => {
+      const chat_id = req.get('CHAT-ID');
+      const user_id = req.get('USER-ID');
+      const username = req.get('USERNAME');
+      if ((chat_id === undefined) || (user_id === undefined) || (username === undefined)){
+        res.status(400).send({ message: "Bad request."});
+        console.log('Bad Request');
+      } else {
+        mongoose.model('Chat').findOne({ id: chat_id }, (err, chat) => {
+          if (err) throw err;
+          if (!chat) {
+            res.status(404).send({ message: 'Chat not found' });
+          } else {
+            if (chat.users.find( (x) => x.user_id === user_id )) {
+              res.status(403).send({ message: 'User already in chat' });
+            } else {
+              const ttlDate = _flooredDate(Date.now()).add(24, 'hours').unix();
+              client.zadd(['chats_ttl', ttlDate, chat_id], (err, response) => {
+                if (err) throw err;
+                client.zadd(['users_ttl', ttlDate, `${chat_id},${user_id}`], (err, response) => {
+                  if (err) throw err;
+                  mongoose.model('Chat').findByIdAndUpdate(chat._id, { $push: { "users": { "user_id": user_id, "username": username } } }, { safe: true, upsert: true}, (err, model) => {
+                    if (err) throw err;
+                    console.log(`${user_id} joined ${chat_id}`);
+                    res.send(`${user_id} joined ${chat_id}`);
+                  });
+                });
+              });
+            }
+          }
+        });
+      }
+    });
   return router;
 };
 
