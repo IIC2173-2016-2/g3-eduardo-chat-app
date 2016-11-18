@@ -51,5 +51,5 @@ block content
     });
     socket.on('chat', function(msg, username){
       $('#messages').append($('<li>').text(username + ": " + msg));
-      $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+      $("html, body").animate({ scrollTop: $(document).height() }, 1);
     });

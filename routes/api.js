@@ -38,8 +38,10 @@ module.exports = (client, mongoose) => {
                   url: `${process.env.SIBLING_CHAT}/api/v1/backup/create_chat`,
                   headers: {
                     'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+                    'TARGET-SERVER': process.env.SIBLING_SERVER,
                     'CHAT-ID': chat_id,
-                    'CHAT-NAME': chat_name
+                    'CHAT-NAME': chat_name,
+                    'TARGET-SERVER': process.env.SIBLING_SERVER
                   }
                 };
                 request(options, (err, response, body) => {
@@ -97,6 +99,7 @@ module.exports = (client, mongoose) => {
                       url: `${process.env.SIBLING_CHAT}/api/v1/backup/join_chat`,
                       headers: {
                         'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+                        'TARGET-SERVER': process.env.SIBLING_SERVER,
                         'CHAT-ID': chat_id,
                         'USER-ID': user_id,
                         'USERNAME': username
@@ -134,6 +137,7 @@ module.exports = (client, mongoose) => {
           url: `${process.env.SIBLING_CHAT}/api/v1/backup/delete_chat`,
           headers: {
             'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+            'TARGET-SERVER': process.env.SIBLING_SERVER,
             'CHAT-ID': chat_id
           }
         };
@@ -157,6 +161,7 @@ module.exports = (client, mongoose) => {
           url: `${process.env.SIBLING_CHAT}/api/v1/backup/remove_from_chat`,
           headers: {
             'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+            'TARGET-SERVER': process.env.SIBLING_SERVER,
             'CHAT-ID': chat_id,
             'USER-ID': user_id
           }
@@ -175,7 +180,8 @@ module.exports = (client, mongoose) => {
       const options = {
         url: `${process.env.SIBLING_CHAT}/api/v1/alive`,
         headers: {
-          'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY
+          'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+          'TARGET-SERVER': process.env.SIBLING_SERVER
         }
       };
       request(options, (err, response, body) => {
@@ -192,6 +198,7 @@ module.exports = (client, mongoose) => {
                       url: `${process.env.SIBLING_CHAT}/api/v1/restore/chat`,
                       headers: {
                         'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
+                        'TARGET-SERVER': process.env.SIBLING_SERVER,
                         'CHAT-ID': chat.id,
                         'CHAT-NAME': chat.name
                       }
@@ -221,6 +228,7 @@ module.exports = (client, mongoose) => {
                       headers: {
                         'CHAT-API-SECRET-KEY': process.env.CHAT_API_SECRET_KEY,
                         'CHAT-ID': chat_id,
+                        'TARGET-SERVER': process.env.SIBLING_SERVER,
                         'USER-ID': user_id,
                         'USERNAME': user[0].username
                       }
