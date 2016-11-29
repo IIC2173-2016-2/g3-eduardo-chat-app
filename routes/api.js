@@ -311,6 +311,10 @@ module.exports = (client, mongoose) => {
       if ((chat_id === undefined) || (chat_name === undefined)){
         res.status(400).send({ message: "Bad request."});
       } else {
+        console.log("=========================== TARGET SERVER =============================");
+        console.log(req.get("TARGET-SERVER"));
+        console.log("=========================== TARGET SERVER =============================");
+        console.log(process.env.CURRENT_SERVER);
         if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
           if (create_chat(chat_id, chat_name, true)){
             res.send(`Created ${chat_id}.`);
