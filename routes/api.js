@@ -257,7 +257,7 @@ module.exports = (client, mongoose) => {
   router.route('/v1/*').get(
     (req, res, next) => {
       if (req.get('CHAT-API-SECRET-KEY') === process.env.CHAT_API_SECRET_KEY){
-        if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
+        if(req.get("TARGET-SERVER") !== undefined && req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
           process.env.LOAD = "heavy";
           ask_sibling();
         };
@@ -282,7 +282,7 @@ module.exports = (client, mongoose) => {
         res.status(400).send({ message: "Bad request." });
       }
       else {
-        if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
+        if(req.get("TARGET-SERVER") !== undefined && req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
           mongoose.model('Backup').findOne({ id: chat_id }, (err, chat) => {
             if (err) throw err;
             if (!chat) {
@@ -315,7 +315,7 @@ module.exports = (client, mongoose) => {
         console.log(req.get("TARGET-SERVER"));
         console.log("=========================== TARGET SERVER =============================");
         console.log(process.env.CURRENT_SERVER);
-        if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
+        if(req.get("TARGET-SERVER") !== undefined && req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
           if (create_chat(chat_id, chat_name, true)){
             res.send(`Created ${chat_id}.`);
           };
@@ -333,7 +333,7 @@ module.exports = (client, mongoose) => {
       if ((chat_id === undefined)){
         res.status(400).send({ message: "Bad request."});
       } else {
-        if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
+        if(req.get("TARGET-SERVER") !== undefined && req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
           delete_chat(chat_id, res, true);
         } else {
           delete_chat(chat_id, res);
@@ -349,7 +349,7 @@ module.exports = (client, mongoose) => {
       if ((chat_id === undefined) || (user_id === undefined) || (username === undefined)){
         res.status(400).send({ message: "Bad request."});
       } else {
-        if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
+        if(req.get("TARGET-SERVER") !== undefined && req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
           join_chat(chat_id, user_id, username, res, true);
         } else {
           join_chat(chat_id, user_id, username, res);
@@ -364,7 +364,7 @@ module.exports = (client, mongoose) => {
       if ((chat_id === undefined) || (user_id === undefined)){
         res.status(400).send({ message: "Bad request."});
       } else {
-        if(req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
+        if(req.get("TARGET-SERVER") !== undefined && req.get("TARGET-SERVER") !== process.env.CURRENT_SERVER){
           remove_from_chat(chat_id, user_id, res, true);
         } else {
           remove_from_chat(chat_id, user_id, res);
